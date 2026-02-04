@@ -51,6 +51,8 @@ with col2:
         st.session_state.history = []
         st.experimental_rerun()
 
+show_raw = st.toggle("Show raw model response", value=False)
+
 if classify_clicked:
     if not po_description.strip():
         st.warning("Please enter a PO description.")
@@ -68,10 +70,24 @@ if classify_clicked:
 
         if parsed is None:
             st.error("Model returned non-JSON output.")
-            with st.expander("Raw response"):
-                st.text(result)
+            if show_raw:
+                with st.expander("Raw response"):
+                    st.text(result)
         else:
             st.success("Classification complete.")
+
+            with st.container(border=True):
+                st.subheader("Predicted Category")
+                l1 = parsed.get("L1") or parsed.get("l1") or parsed.get("level_1")
+                l2 = parsed.get("L2") or parsed.get("l2") or parsed.get("level_2")
+                l3 = parsed.get("L3") or parsed.get("l3") or parsed.get("level_3")
+                if any([l1, l2, l3]):
+                    st.write(f"**L1:** {l1 or '—'}")
+                    st.write(f"**L2:** {l2 or '—'}")
+                    st.write(f"**L3:** {l3 or '—'}")
+                else:
+                    st.write("Structured category keys not found; showing raw JSON below.")
+
             st.json(parsed)
 
             pretty = json.dumps(parsed, indent=2, ensure_ascii=False)
@@ -85,3 +101,7 @@ if classify_clicked:
                 )
             with col4:
                 st.code(textwrap.shorten(pretty.replace("\n", " "), width=120), language="text")
+
+            if show_raw:
+                with st.expander("Raw response"):
+                    st.text(result)
